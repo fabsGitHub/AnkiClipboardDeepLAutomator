@@ -5,6 +5,7 @@ A Python script that automatically translates selected text using DeepL and save
 ## Note
 
 The app has currently only been tested on macOS!
+
 ---
 
 ## 🚀 Features
@@ -34,7 +35,7 @@ Make sure the following is installed:
 ### 1. Clone the repository or download the files
 
 ```bash
-git clone <your-repo-url>
+git clone <https://github.com/fabsGitHub/AnkiClipboardDeepLAutomator>
 cd AnkiClipboardDeepLAutomator
 ```
 
@@ -51,12 +52,6 @@ venv\Scripts\activate     # Windows
 ---
 
 ### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-If there is no `requirements.txt` file:
 
 ```bash
 pip install pyperclip requests pygame python-dotenv deepl pynput
