@@ -1,0 +1,19 @@
+{
+  "deepl": {
+    "auth_key_env": "AUTH_KEY",
+    "source_lang": "EN",
+    "target_lang": "DE",
+    "model_type": "prefer_quality_optimized"
+  },
+  "anki": {
+    "connect_url": "http://localhost:8765",
+    "deck_name": "english",
+    "model_name": "Basic"
+  },
+  "hotkeys": {
+    "trigger": {
+      "cmd": true,
+      "key": "e"
+    }
+  }
+}
