@@ -13,5 +13,3 @@ venv/
 
 # OS generated files
 .DS_Store
-
-output.log
