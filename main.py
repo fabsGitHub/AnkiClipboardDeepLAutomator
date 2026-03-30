@@ -203,7 +203,7 @@ def main():
     try:
         hotkey_manager.start()
         while True:
-            time.sleep(1)
+            time.sleep(2)
     except KeyboardInterrupt:
         log_info(logger, "Script stopped by user")
     except Exception as e:

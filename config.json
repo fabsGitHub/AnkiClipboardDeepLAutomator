@@ -1,8 +1,8 @@
 {
   "logging": {
-    "level": "INFO",
+    "level": "WARNING",
     "file_level": "INFO",
-    "console_level": "INFO"
+    "console_level": "WARNING"
   },
   "deepl": {
     "auth_key_env": "AUTH_KEY",
