@@ -329,10 +329,8 @@ Permissions: Ensure that script files are executable (`chmod +x /path/to/your/st
 - Run:
 
   ```bash
-  python3 main.py
+  python3 -m pip install xyz
   ```
-
-- Or install manually
 
 ### ❌ Hotkey Not Working
 
