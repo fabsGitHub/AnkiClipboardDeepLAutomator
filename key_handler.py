@@ -1,10 +1,12 @@
 import threading
 from pynput.keyboard import Key
-from typing import Callable
+from typing import List, Callable
 from logging_setup import log_debug, log_info, log_error
 
 
-def on_press(key, logger, hotkeys_config: dict, cmd_pressed: list, e_pressed: list):
+def on_press(
+    key, logger, hotkeys_config: dict, cmd_pressed: List[bool], e_pressed: List[bool]
+):
     """Called when a key is pressed."""
     current_thread = threading.current_thread()
     log_debug(
@@ -26,9 +28,9 @@ def on_release(
     key,
     logger,
     hotkeys_config: dict,
-    cmd_pressed: list,
-    e_pressed: list,
-    action_in_progress: list,
+    cmd_pressed: List[bool],
+    e_pressed: List[bool],
+    action_in_progress: List[bool],
     action_lock: threading.Lock,
     on_cmd_e: Callable,
 ):

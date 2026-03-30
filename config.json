@@ -1,4 +1,9 @@
 {
+  "logging": {
+    "level": "INFO",
+    "file_level": "INFO",
+    "console_level": "INFO"
+  },
   "deepl": {
     "auth_key_env": "AUTH_KEY",
     "source_lang": "EN",

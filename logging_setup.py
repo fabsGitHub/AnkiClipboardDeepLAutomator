@@ -2,13 +2,38 @@ import logging
 from logging.handlers import RotatingFileHandler
 import threading
 import inspect
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
-def setup_logging():
+def get_log_level(level_str: str) -> int:
+    """Convert log level string to logging level constant."""
+    level_str = level_str.upper()
+    if level_str == "DEBUG":
+        return logging.DEBUG
+    elif level_str == "INFO":
+        return logging.INFO
+    elif level_str == "WARNING":
+        return logging.WARNING
+    elif level_str == "ERROR":
+        return logging.ERROR
+    elif level_str == "CRITICAL":
+        return logging.CRITICAL
+    else:
+        return logging.INFO  # Default level
+
+
+def setup_logging(config: Dict[str, Any]) -> logging.Logger:
     """Configure logging with professional formatting and handlers."""
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)  # Set to DEBUG to capture all levels
+
+    # Get log levels from config with defaults
+    log_level = get_log_level(config.get("logging", {}).get("level", "INFO"))
+    file_level = get_log_level(config.get("logging", {}).get("file_level", "DEBUG"))
+    console_level = get_log_level(
+        config.get("logging", {}).get("console_level", "INFO")
+    )
+
+    logger.setLevel(log_level)
 
     # Create formatter with detailed information
     formatter = logging.Formatter(
@@ -23,12 +48,12 @@ def setup_logging():
         backupCount=5,
         encoding="utf-8",
     )
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(file_level)
     file_handler.setFormatter(formatter)
 
     # Console handler for real-time feedback
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)  # Only show INFO and above in console
+    console_handler.setLevel(console_level)
     console_handler.setFormatter(formatter)
 
     # Add handlers to the logger
@@ -43,7 +68,7 @@ def setup_logging():
     return logger
 
 
-def log_debug(logger, message: str):
+def log_debug(logger: logging.Logger, message: str):
     """Log a debug message with caller information."""
     caller_frame = inspect.currentframe().f_back
     caller_function = caller_frame.f_code.co_name
@@ -51,7 +76,7 @@ def log_debug(logger, message: str):
     logger.debug(f"[{caller_function}:{caller_line}] {message}")
 
 
-def log_info(logger, message: str):
+def log_info(logger: logging.Logger, message: str):
     """Log an info message with caller information."""
     caller_frame = inspect.currentframe().f_back
     caller_function = caller_frame.f_code.co_name
@@ -59,7 +84,7 @@ def log_info(logger, message: str):
     logger.info(f"[{caller_function}:{caller_line}] {message}")
 
 
-def log_warning(logger, message: str):
+def log_warning(logger: logging.Logger, message: str):
     """Log a warning message with caller information."""
     caller_frame = inspect.currentframe().f_back
     caller_function = caller_frame.f_code.co_name
@@ -67,7 +92,7 @@ def log_warning(logger, message: str):
     logger.warning(f"[{caller_function}:{caller_line}] {message}")
 
 
-def log_error(logger, message: str, exc: Optional[Exception] = None):
+def log_error(logger: logging.Logger, message: str, exc: Optional[Exception] = None):
     """Log an error message with caller information and optional exception."""
     caller_frame = inspect.currentframe().f_back
     caller_function = caller_frame.f_code.co_name

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import requests
 import json
 import os
 import time
@@ -8,64 +7,73 @@ from pynput.keyboard import Key, Listener
 import signal
 import threading
 import sys
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from logging_setup import setup_logging, log_debug, log_info, log_warning, log_error
 from notification_handler import show_notification, play_sound
 from text_selection import get_selected_text
 from anki_connection import Connection
-from key_handler import on_press, on_release
 
 
-def create_on_cmd_e_handler(
-    logger,
-    deepl_config: Dict[str, Any],
-    anki_config: Dict[str, Any],
-    hotkeys_config: Dict[str, Any],
-    last_trigger_time: list,
-    action_in_progress: list,
-):
-    """Create a handler function for the hotkey action."""
+class HotkeyManager:
+    def __init__(
+        self,
+        logger,
+        deepl_config: Dict[str, Any],
+        anki_config: Dict[str, Any],
+        hotkeys_config: Dict[str, Any],
+    ):
+        self.logger = logger
+        self.deepl_config = deepl_config
+        self.anki_config = anki_config
+        self.hotkeys_config = hotkeys_config
+        self.cmd_pressed = False
+        self.e_pressed = False
+        self.last_trigger_time = 0
+        self.action_in_progress = False
+        self.action_lock = threading.Lock()
+        self.listener = None
+        self.trigger_key = hotkeys_config["trigger"]["key"]
 
-    def on_cmd_e():
+    def on_cmd_e(self):
         """Handle the hotkey action in a separate thread."""
         current_thread = threading.current_thread()
-        log_info(logger, f"on_cmd_e called in thread: {current_thread.name}")
+        log_info(self.logger, f"on_cmd_e called in thread: {current_thread.name}")
 
         current_time = time.time()
-        if current_time - last_trigger_time[0] < 1:  # trigger_delay
-            log_debug(logger, "Ignoring duplicate trigger")
-            action_in_progress[0] = False
+        if current_time - self.last_trigger_time < 1:  # trigger_delay
+            log_debug(self.logger, "Ignoring duplicate trigger")
+            self.action_in_progress = False
             return
 
-        last_trigger_time[0] = current_time
+        self.last_trigger_time = current_time
 
         try:
-            log_info(logger, "Hotkey pressed, starting translation process...")
-            selected_text = get_selected_text(logger)
+            log_info(self.logger, "Hotkey pressed, starting translation process...")
+            selected_text = get_selected_text(self.logger)
 
             if not selected_text:
-                log_warning(logger, "No text selected or failed to copy text")
+                log_warning(self.logger, "No text selected or failed to copy text")
                 show_notification(
-                    logger, "No text selected or failed to copy text", "⚠️ No Text"
+                    self.logger, "No text selected or failed to copy text", "⚠️ No Text"
                 )
                 return
 
-            log_debug(logger, f"Selected Text: {repr(selected_text)}")
+            log_debug(self.logger, f"Selected Text: {repr(selected_text)}")
 
-            cn = Connection(logger, deepl_config, anki_config)
-            translation = cn._translate(selected_text, deepl_config["target_lang"])
+            cn = Connection(self.logger, self.deepl_config, self.anki_config)
+            translation = cn._translate(selected_text, self.deepl_config["target_lang"])
             if translation is None:
-                log_error(logger, "Translation failed")
+                log_error(self.logger, "Translation failed")
                 return
 
-            log_debug(logger, f"Translation: {repr(translation)}")
+            log_debug(self.logger, f"Translation: {repr(translation)}")
 
             result = cn._invoke(
                 action="addNote",
                 note={
-                    "deckName": anki_config["deck_name"],
-                    "modelName": anki_config["model_name"],
+                    "deckName": self.anki_config["deck_name"],
+                    "modelName": self.anki_config["model_name"],
                     "fields": {
                         "Front": selected_text,
                         "Back": translation,
@@ -75,23 +83,92 @@ def create_on_cmd_e_handler(
             )
 
             if result is not None:
-                log_info(logger, f"Note created successfully! Note ID: {result}")
-                play_sound(logger)
+                log_info(self.logger, f"Note created successfully! Note ID: {result}")
+                play_sound(self.logger)
 
         except Exception as e:
             error_msg = f"An error occurred: {str(e)}"
-            log_error(logger, error_msg, e)
-            show_notification(logger, error_msg, "❌ Error")
+            log_error(self.logger, error_msg, e)
+            show_notification(self.logger, error_msg, "❌ Error")
         finally:
-            action_in_progress[0] = False
-            log_debug(logger, "Action completed, releasing lock")
+            self.action_in_progress = False
+            log_debug(self.logger, "Action completed, releasing lock")
 
-    return on_cmd_e
+    def on_press(self, key):
+        """Called when a key is pressed."""
+        current_thread = threading.current_thread()
+        log_debug(
+            self.logger,
+            f"on_press called in thread: {current_thread.name} for key: {key}",
+        )
+
+        try:
+            if key == Key.cmd:
+                self.cmd_pressed = True
+                log_info(self.logger, "Cmd key pressed")
+            elif hasattr(key, "char") and key.char == self.trigger_key:
+                self.e_pressed = True
+                log_info(self.logger, f"Trigger key '{key.char}' pressed")
+        except AttributeError as e:
+            log_error(self.logger, f"AttributeError for key: {key}", e)
+
+    def on_release(self, key):
+        """Called when a key is released."""
+        current_thread = threading.current_thread()
+        log_debug(
+            self.logger,
+            f"on_release called in thread: {current_thread.name} for key: {key}",
+        )
+
+        try:
+            if key == Key.cmd:
+                self.cmd_pressed = False
+                log_info(self.logger, "Cmd key released")
+
+                if self.e_pressed:
+                    with self.action_lock:
+                        if not self.action_in_progress:
+                            self.action_in_progress = True
+                            threading.Thread(target=self.on_cmd_e).start()
+                self.e_pressed = False
+            elif hasattr(key, "char") and key.char == self.trigger_key:
+                self.e_pressed = False
+                log_info(self.logger, f"Trigger key '{key.char}' released")
+
+                # Check if Cmd is still pressed
+                if self.cmd_pressed and not self.action_in_progress:
+                    with self.action_lock:
+                        if not self.action_in_progress:
+                            self.action_in_progress = True
+                            threading.Thread(target=self.on_cmd_e).start()
+        except AttributeError as e:
+            log_error(self.logger, f"AttributeError for key: {key}", e)
+
+    def start(self):
+        """Start the keyboard listener."""
+        self.listener = Listener(on_press=self.on_press, on_release=self.on_release)
+        self.listener.start()
+        log_info(self.logger, "Listener started. Press CTRL+C to exit.")
+
+    def stop(self):
+        """Stop the keyboard listener."""
+        if self.listener and self.listener.running:
+            self.listener.stop()
+            self.listener.join()
+            log_info(self.logger, "Listener stopped.")
 
 
 def main():
-    logger = setup_logging()
+    try:
+        with open("config.json", "r") as config_file:
+            config = json.load(config_file)
+    except Exception as e:
+        print(f"Failed to load configuration: {e}")
+        sys.exit(1)
 
+    # Setup logging with configuration
+    logger = setup_logging(config)
+    
     def handle_signal(sig, frame):
         log_info(logger, "Script stopped by user (Ctrl+C)")
         sys.exit(0)
@@ -121,44 +198,10 @@ def main():
         f"Press Cmd + {hotkeys_config['trigger']['key']} to translate selected text",
     )
 
-    # Use lists to allow modification in nested functions
-    cmd_pressed = [False]
-    e_pressed = [False]
-    last_trigger_time = [0]
-    action_in_progress = [False]
-    action_lock = threading.Lock()
-
-    # Create the on_cmd_e handler function
-    on_cmd_e_handler = create_on_cmd_e_handler(
-        logger,
-        deepl_config,
-        anki_config,
-        hotkeys_config,
-        last_trigger_time,
-        action_in_progress,
-    )
-
-    # Define the callback functions with proper closures
-    def wrapped_on_press(key):
-        on_press(key, logger, hotkeys_config, cmd_pressed, e_pressed)
-
-    def wrapped_on_release(key):
-        on_release(
-            key,
-            logger,
-            hotkeys_config,
-            cmd_pressed,
-            e_pressed,
-            action_in_progress,
-            action_lock,
-            on_cmd_e_handler,
-        )
-
-    listener = Listener(on_press=wrapped_on_press, on_release=wrapped_on_release)
+    hotkey_manager = HotkeyManager(logger, deepl_config, anki_config, hotkeys_config)
 
     try:
-        listener.start()
-        log_info(logger, "Listener started. Press CTRL+C to exit.")
+        hotkey_manager.start()
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
@@ -166,9 +209,7 @@ def main():
     except Exception as e:
         log_error(logger, f"Unexpected error: {e}", e)
     finally:
-        if listener.running:
-            listener.stop()
-        listener.join()
+        hotkey_manager.stop()
         log_info(logger, "Script terminated")
         print("\nScript stopped by user. Goodbye!")
 
