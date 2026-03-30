@@ -118,9 +118,9 @@ AUTH_KEY=your_deepl_api_key_here
 ```json
 {
   "logging": {
-    "level": "INFO",
+    "level": "WARNING",
     "file_level": "DEBUG",
-    "console_level": "INFO"
+    "console_level": "WARNING"
   },
   "deepl": {
     "auth_key_env": "AUTH_KEY",
@@ -180,7 +180,7 @@ Ctrl + C
 
 ```text
 .
-├── install_dependencies.py
+├── install_dependencies.py (currently not working)
 ├── main.py
 ├── config.json
 ├── .env
@@ -198,7 +198,7 @@ Ctrl + C
 
 ## 📁 Shell Script & launchd agent
 
-Automatically Start Anki and Anki-Listener on macOS Login
+### Automatically Start Anki and Anki-Listener on macOS Login
 To automatically start Anki and your Anki-Listener script when you log in to your macOS user account, you can use a shell script and a launchd agent. This guide will walk you through the setup process.
 
 ### Prerequisites
@@ -210,8 +210,8 @@ Make sure Python is installed and the correct version is referenced in the scrip
 Step 1: Customize the Script
 Replace the placeholders in the script with your actual paths:
 
-/path/to/your/AnkiClipboardDeepLAutomator/ with the path to your project directory.
-/path/to/your/python3 with the path to your Python executable.
+`/path/to/your/AnkiClipboardDeepLAutomator/` with the path to your project directory.
+`/path/to/your/python3` with the path to your Python executable.
 
 Here is the script with placeholders:
 ```bash
@@ -280,7 +280,7 @@ fi
 ```
 
 Step 2: Save the Script
-Save the script to a file, for example, start_anki_listener.sh, in your project directory.
+Save the script to a file, for example, **start_anki_listener.sh**, in your project directory.
 
 Step 3: Make the Script Executable
 Open Terminal and navigate to your project directory. Make the script executable:
@@ -291,9 +291,9 @@ chmod +x /path/to/your/start_anki_listener.sh
 
 Step 4: Add the Script as a Login Item
 
-Open System Preferences > Users & Groups > Login Items.
-Click the + button.
-Navigate to the location where you saved start_anki_listener.sh and select it.
+Open **System Preferences > Users & Groups > Login Items**.
+Click the **+ button**.
+Navigate to the location where you saved **start_anki_listener.sh** and select it.
 Ensure the checkbox next to the script is checked to allow it to run at login.
 
 ### Troubleshooting
@@ -304,9 +304,9 @@ Logs: Check the log files for any error messages.
 
 ### Important Notes
 
-Replace Paths: Make sure to replace all placeholders (/path/to/your/...) with the actual paths to your project directory and Python executable.
+Replace Paths: Make sure to replace all placeholders (`/path/to/your/...`) with the actual paths to your project directory and Python executable.
 Python Version: Ensure that the path to the Python version is correct.
-Permissions: Ensure that script files are executable (chmod +x /path/to/your/start_anki_listener.sh).
+Permissions: Ensure that script files are executable (`chmod +x /path/to/your/start_anki_listener.sh`).
 
 ---
 
