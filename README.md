@@ -280,7 +280,7 @@ fi
 ```
 
 Step 2: Save the Script
-Save the script to a file, for example, **start_anki_listener.sh**, in your project directory.
+Save the script to a file, for example, *start_anki_listener.sh*, in your project directory.
 
 Step 3: Make the Script Executable
 Open Terminal and navigate to your project directory. Make the script executable:
@@ -291,9 +291,9 @@ chmod +x /path/to/your/start_anki_listener.sh
 
 Step 4: Add the Script as a Login Item
 
-Open **System Preferences > Users & Groups > Login Items**.
-Click the **+ button**.
-Navigate to the location where you saved **start_anki_listener.sh** and select it.
+Open *System Preferences > Users & Groups > Login Items*.
+Click the *+ button*.
+Navigate to the location where you saved *start_anki_listener.sh* and select it.
 Ensure the checkbox next to the script is checked to allow it to run at login.
 
 ### Troubleshooting
