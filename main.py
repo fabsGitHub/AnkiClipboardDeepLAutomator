@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/Library/Frameworks/Python.framework/Versions/3.13/bin/python3
 import json
 import os
 import time
@@ -13,6 +13,7 @@ from logging_setup import setup_logging, log_debug, log_info, log_warning, log_e
 from notification_handler import show_notification, play_sound
 from text_selection import get_selected_text
 from anki_connection import Connection
+# from install_dependencies import install_dependencies
 
 
 class HotkeyManager:
@@ -163,12 +164,17 @@ def main():
         with open("config.json", "r") as config_file:
             config = json.load(config_file)
     except Exception as e:
-        print(f"Failed to load configuration: {e}")
+        print(f"❌ Failed to load configuration: {e}")
         sys.exit(1)
 
     # Setup logging with configuration
     logger = setup_logging(config)
-    
+
+    # Check and install dependencies
+    # if not install_dependencies(logger):
+    #     log_error("Failed to install dependencies")
+    #     sys.exit(1)
+
     def handle_signal(sig, frame):
         log_info(logger, "Script stopped by user (Ctrl+C)")
         sys.exit(0)
@@ -179,8 +185,6 @@ def main():
     load_dotenv()
 
     try:
-        with open("config.json", "r") as config_file:
-            config = json.load(config_file)
         deepl_config = config["deepl"]
         anki_config = config["anki"]
         hotkeys_config = config["hotkeys"]
@@ -211,7 +215,7 @@ def main():
     finally:
         hotkey_manager.stop()
         log_info(logger, "Script terminated")
-        print("\nScript stopped by user. Goodbye!")
+        print("\n👋 Script stopped by user. Goodbye!")
 
 
 if __name__ == "__main__":
