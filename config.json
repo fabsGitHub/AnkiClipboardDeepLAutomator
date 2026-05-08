@@ -8,7 +8,8 @@
     "auth_key_env": "AUTH_KEY",
     "source_lang": "EN",
     "target_lang": "DE",
-    "model_type": "prefer_quality_optimized"
+    "model_type": "prefer_quality_optimized",
+    "max_chars": 30
   },
   "anki": {
     "connect_url": "http://localhost:8765",
@@ -18,7 +19,7 @@
   "hotkeys": {
     "trigger": {
       "cmd": true,
-      "key": "e"
+      "key": "."
     }
   }
 }

@@ -15,7 +15,6 @@ from text_selection import get_selected_text
 from anki_connection import Connection
 # from install_dependencies import install_dependencies
 
-
 class HotkeyManager:
     def __init__(
         self,
@@ -62,8 +61,22 @@ class HotkeyManager:
 
             log_debug(self.logger, f"Selected Text: {repr(selected_text)}")
 
+            # --- VALIDATION BLOCK ---
+            max_chars = self.deepl_config.get("max_chars", 200) 
+            if len(selected_text) > max_chars:
+                log_warning(self.logger, f"Aborting: Text too long ({len(selected_text)} chars). Max allowed: {max_chars}")
+                show_notification(
+                    self.logger, 
+                    f"Selection too long ({len(selected_text)} chars). Please select less text.", 
+                    "❌ Limit Exceeded"
+                )
+                return  # Stop execution here
+            # ------------------------
+
+            # Proceed with translation and Anki only if validation passes
             cn = Connection(self.logger, self.deepl_config, self.anki_config)
             translation = cn._translate(selected_text, self.deepl_config["target_lang"])
+            
             if translation is None:
                 log_error(self.logger, "Translation failed")
                 return
@@ -94,7 +107,7 @@ class HotkeyManager:
         finally:
             self.action_in_progress = False
             log_debug(self.logger, "Action completed, releasing lock")
-
+    
     def on_press(self, key):
         """Called when a key is pressed."""
         current_thread = threading.current_thread()
