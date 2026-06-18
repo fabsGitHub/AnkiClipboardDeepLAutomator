@@ -62,7 +62,7 @@ class HotkeyManager:
             log_debug(self.logger, f"Selected Text: {repr(selected_text)}")
 
             # --- VALIDATION BLOCK ---
-            max_chars = self.deepl_config.get("max_chars", 200) 
+            max_chars = self.deepl_config.get("max_chars", 100) 
             if len(selected_text) > max_chars:
                 log_warning(self.logger, f"Aborting: Text too long ({len(selected_text)} chars). Max allowed: {max_chars}")
                 show_notification(
@@ -76,14 +76,17 @@ class HotkeyManager:
             # Proceed with translation and Anki only if validation passes
             cn = Connection(self.logger, self.deepl_config, self.anki_config)
             translation = cn._translate(selected_text, self.deepl_config["target_lang"])
+            audio_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q={selected_text}"
+            audio_filename = f"tts_en_{int(time.time())}.mp3"
             
             if translation is None:
                 log_error(self.logger, "Translation failed")
                 return
 
             log_debug(self.logger, f"Translation: {repr(translation)}")
-
-            result = cn._invoke(
+            
+            log_info(self.logger, "Creating Card 1: Forward Direction...")
+            result1 = cn._invoke(
                 action="addNote",
                 note={
                     "deckName": self.anki_config["deck_name"],
@@ -93,12 +96,38 @@ class HotkeyManager:
                         "Back": translation,
                     },
                     "options": {"closeAfterAdding": True},
+                    "audio": [{
+                        "url": audio_url,
+                        "filename": audio_filename,
+                        "fields": ["Back"] 
+                    }]
                 },
             )
 
-            if result is not None:
-                log_info(self.logger, f"Note created successfully! Note ID: {result}")
+            log_info(self.logger, "Creating Card 2: Reverse Direction...")
+            result2 = cn._invoke(
+                action="addNote",
+                note={
+                    "deckName": self.anki_config["deck_name"],
+                    "modelName": self.anki_config["model_name"],
+                    "fields": {
+                        "Front": translation,
+                        "Back": selected_text,
+                    },
+                    "options": {"closeAfterAdding": True},
+                    "audio": [{
+                        "url": audio_url,
+                        "filename": f"rev_{audio_filename}",
+                        "fields": ["Back"]
+                    }]
+                },
+            )
+
+            if result1 is not None and result2 is not None:
+                log_info(self.logger, f"Both cards created successfully! IDs: {result1}, {result2}")
                 play_sound(self.logger)
+            else:
+                log_warning(self.logger, "One or both cards failed to create.")
 
         except Exception as e:
             error_msg = f"An error occurred: {str(e)}"
