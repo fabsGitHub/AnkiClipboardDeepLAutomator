@@ -1,6 +1,5 @@
 import logging
 from logging.handlers import RotatingFileHandler
-import threading
 import inspect
 from typing import Optional, Dict, Any
 

@@ -1,5 +1,4 @@
 import subprocess
-import logging
 from AppKit import NSPasteboard, NSWorkspace
 from typing import Optional
 from logging_setup import log_debug, log_info, log_warning, log_error

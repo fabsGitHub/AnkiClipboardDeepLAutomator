@@ -70,10 +70,8 @@ class HotkeyManager:
                     f"Selection too long ({len(selected_text)} chars). Please select less text.", 
                     "❌ Limit Exceeded"
                 )
-                return  # Stop execution here
-            # ------------------------
+                return
 
-            # Proceed with translation and Anki only if validation passes
             cn = Connection(self.logger, self.deepl_config, self.anki_config)
             translation = cn._translate(selected_text, self.deepl_config["target_lang"])
             audio_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q={selected_text}"

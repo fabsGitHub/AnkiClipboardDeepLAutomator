@@ -189,7 +189,6 @@ Ctrl + C
 ├── notification_handler.py
 ├── text_selection.py
 ├── anki_connection.py
-├── key_handler.py
 ├── anki_automator.log
 └── notification_sound.mp3
 ```
