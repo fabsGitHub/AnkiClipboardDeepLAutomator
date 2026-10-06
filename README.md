@@ -49,6 +49,17 @@ python3 main.py
 3. Select a phrase in another application and press Command plus the configured trigger key.
 4. The app creates a forward and a reverse card in the configured deck.
 
+## Automated checks
+
+GitHub Actions runs Python bytecode compilation and the standard-library unit tests. Run the same checks locally with:
+
+```bash
+python3 -m compileall -q .
+python3 -m unittest discover -s tests -v
+```
+
+These checks cover the platform-independent AppleScript escaping helper. The complete hotkey workflow still requires macOS, the required permissions, Anki with AnkiConnect, and a configured DeepL API key, so CI does not claim to exercise those integrations.
+
 ## Data and privacy
 
 - Selected text and the resulting translation are sent to DeepL and then to the local AnkiConnect instance because those transfers are required for the workflow.
