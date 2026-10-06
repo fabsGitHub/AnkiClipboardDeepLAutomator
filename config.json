@@ -14,11 +14,12 @@
   "anki": {
     "connect_url": "http://localhost:8765",
     "deck_name": "english",
-    "model_name": "Basic"
+    "model_name": "Basic",
+    "include_audio": false,
+    "audio_lang": "en"
   },
   "hotkeys": {
     "trigger": {
-      "cmd": true,
       "key": "."
     }
   }
