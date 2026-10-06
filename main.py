@@ -1,7 +1,7 @@
-#!/Library/Frameworks/Python.framework/Versions/3.13/bin/python3
 import json
 import os
 import time
+from urllib.parse import urlencode
 from dotenv import load_dotenv
 from pynput.keyboard import Key, Listener
 import signal
@@ -59,7 +59,7 @@ class HotkeyManager:
                 )
                 return
 
-            log_debug(self.logger, f"Selected Text: {repr(selected_text)}")
+            log_debug(self.logger, f"Selected text captured ({len(selected_text)} characters)")
 
             # --- VALIDATION BLOCK ---
             max_chars = self.deepl_config.get("max_chars", 100) 
@@ -74,52 +74,62 @@ class HotkeyManager:
 
             cn = Connection(self.logger, self.deepl_config, self.anki_config)
             translation = cn._translate(selected_text, self.deepl_config["target_lang"])
-            audio_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q={selected_text}"
-            audio_filename = f"tts_en_{int(time.time())}.mp3"
-            
+
             if translation is None:
                 log_error(self.logger, "Translation failed")
                 return
 
-            log_debug(self.logger, f"Translation: {repr(translation)}")
+            log_debug(self.logger, f"Translation completed ({len(translation)} characters)")
+
+            audio_url = None
+            audio_filename = None
+            if self.anki_config.get("include_audio", False):
+                tts_params = {
+                    "ie": "UTF-8",
+                    "tl": self.anki_config.get("audio_lang", "en"),
+                    "client": "tw-ob",
+                    "q": selected_text,
+                }
+                audio_url = "https://translate.google.com/translate_tts?" + urlencode(tts_params)
+                audio_filename = f"tts_{tts_params['tl']}_{int(time.time())}.mp3"
+
+            log_debug(self.logger, f"Translation completed ({len(translation)} characters)")
             
             log_info(self.logger, "Creating Card 1: Forward Direction...")
-            result1 = cn._invoke(
-                action="addNote",
-                note={
-                    "deckName": self.anki_config["deck_name"],
-                    "modelName": self.anki_config["model_name"],
-                    "fields": {
-                        "Front": selected_text,
-                        "Back": translation,
-                    },
-                    "options": {"closeAfterAdding": True},
-                    "audio": [{
-                        "url": audio_url,
-                        "filename": audio_filename,
-                        "fields": ["Back"] 
-                    }]
+            note1 = {
+                "deckName": self.anki_config["deck_name"],
+                "modelName": self.anki_config["model_name"],
+                "fields": {
+                    "Front": selected_text,
+                    "Back": translation,
                 },
-            )
+                "options": {"closeAfterAdding": True},
+            }
+            if audio_url and audio_filename:
+                note1["audio"] = [{
+                    "url": audio_url,
+                    "filename": audio_filename,
+                    "fields": ["Back"],
+                }]
+            result1 = cn._invoke(action="addNote", note=note1)
 
             log_info(self.logger, "Creating Card 2: Reverse Direction...")
-            result2 = cn._invoke(
-                action="addNote",
-                note={
-                    "deckName": self.anki_config["deck_name"],
-                    "modelName": self.anki_config["model_name"],
-                    "fields": {
-                        "Front": translation,
-                        "Back": selected_text,
-                    },
-                    "options": {"closeAfterAdding": True},
-                    "audio": [{
-                        "url": audio_url,
-                        "filename": f"rev_{audio_filename}",
-                        "fields": ["Back"]
-                    }]
+            note2 = {
+                "deckName": self.anki_config["deck_name"],
+                "modelName": self.anki_config["model_name"],
+                "fields": {
+                    "Front": translation,
+                    "Back": selected_text,
                 },
-            )
+                "options": {"closeAfterAdding": True},
+            }
+            if audio_url and audio_filename:
+                note2["audio"] = [{
+                    "url": audio_url,
+                    "filename": f"rev_{audio_filename}",
+                    "fields": ["Back"],
+                }]
+            result2 = cn._invoke(action="addNote", note=note2)
 
             if result1 is not None and result2 is not None:
                 log_info(self.logger, f"Both cards created successfully! IDs: {result1}, {result2}")
@@ -127,9 +137,9 @@ class HotkeyManager:
             else:
                 log_warning(self.logger, "One or both cards failed to create.")
 
-        except Exception as e:
-            error_msg = f"An error occurred: {str(e)}"
-            log_error(self.logger, error_msg, e)
+        except Exception:
+            error_msg = "The translation workflow failed. Check the privacy-safe log for details."
+            log_error(self.logger, "The workflow failed; exception details were omitted to protect selected text.")
             show_notification(self.logger, error_msg, "❌ Error")
         finally:
             self.action_in_progress = False
