@@ -93,7 +93,7 @@ class HotkeyManager:
                 audio_url = "https://translate.google.com/translate_tts?" + urlencode(tts_params)
                 audio_filename = f"tts_{tts_params['tl']}_{int(time.time())}.mp3"
 
-            log_debug(self.logger, f"Translation completed ({len(translation)} characters)")
+
             
             log_info(self.logger, "Creating Card 1: Forward Direction...")
             note1 = {
@@ -161,7 +161,7 @@ class HotkeyManager:
                 self.e_pressed = True
                 log_info(self.logger, f"Trigger key '{key.char}' pressed")
         except AttributeError as e:
-            log_error(self.logger, f"AttributeError for key: {key}", e)
+            log_error(self.logger, "Keyboard event could not be processed.")
 
     def on_release(self, key):
         """Called when a key is released."""
@@ -219,11 +219,6 @@ def main():
 
     # Setup logging with configuration
     logger = setup_logging(config)
-
-    # Check and install dependencies
-    # if not install_dependencies(logger):
-    #     log_error("Failed to install dependencies")
-    #     sys.exit(1)
 
     def handle_signal(sig, frame):
         log_info(logger, "Script stopped by user (Ctrl+C)")
