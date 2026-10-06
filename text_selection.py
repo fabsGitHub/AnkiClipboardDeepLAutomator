@@ -2,6 +2,7 @@ import subprocess
 from AppKit import NSPasteboard, NSWorkspace
 from typing import Optional
 from logging_setup import log_debug, log_info, log_warning, log_error
+from applescript_utils import escape_applescript_string
 
 
 def get_selected_text(logger) -> Optional[str]:
@@ -10,9 +11,9 @@ def get_selected_text(logger) -> Optional[str]:
     try:
         active_app = NSWorkspace.sharedWorkspace().frontmostApplication()
         app_name = active_app.localizedName()
-        log_debug(logger, f"Active application: {app_name}")
+        log_debug(logger, "Using the foreground application for text selection")
 
-        safe_app_name = app_name.replace("\\\\", "\\\\\\\\").replace('"', '\\\\"')
+        safe_app_name = escape_applescript_string(app_name)
         script = f"""
         tell application "{safe_app_name}"
             try
