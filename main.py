@@ -13,7 +13,6 @@ from logging_setup import setup_logging, log_debug, log_info, log_warning, log_e
 from notification_handler import show_notification, play_sound
 from text_selection import get_selected_text
 from anki_connection import Connection
-# from install_dependencies import install_dependencies
 
 class HotkeyManager:
     def __init__(
@@ -150,7 +149,7 @@ class HotkeyManager:
         current_thread = threading.current_thread()
         log_debug(
             self.logger,
-            f"on_press called in thread: {current_thread.name} for key: {key}",
+            f"Key press event received in thread: {current_thread.name}",
         )
 
         try:
@@ -168,7 +167,7 @@ class HotkeyManager:
         current_thread = threading.current_thread()
         log_debug(
             self.logger,
-            f"on_release called in thread: {current_thread.name} for key: {key}",
+            f"Key release event received in thread: {current_thread.name}",
         )
 
         try:
@@ -193,7 +192,7 @@ class HotkeyManager:
                             self.action_in_progress = True
                             threading.Thread(target=self.on_cmd_e).start()
         except AttributeError as e:
-            log_error(self.logger, f"AttributeError for key: {key}", e)
+            log_error(self.logger, "Keyboard event could not be processed.")
 
     def start(self):
         """Start the keyboard listener."""
