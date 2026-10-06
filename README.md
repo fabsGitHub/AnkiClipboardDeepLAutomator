@@ -1,362 +1,73 @@
 # AnkiClipboardDeepLAutomator
 
-A Python automation tool that translates selected text using DeepL and instantly creates Anki flashcards via a customizable hotkey.
+A macOS keyboard workflow that sends selected text to DeepL and creates forward and reverse Anki notes through AnkiConnect.
 
-> ✨ **New:** Automatic dependency installation and cross-platform support!
+## What it does
 
----
+- Reads selected text with macOS accessibility and clipboard APIs.
+- Sends the selection to DeepL for translation.
+- Creates two notes in Anki through the local AnkiConnect service.
+- Can optionally attach speech audio from Google Translate Text-to-Speech.
 
-## 📖 Introduction
+This is a personal productivity tool and learning project. It is currently macOS-only because it uses AppKit, AppleScript, and the macOS Command key.
 
-**AnkiClipboardDeepLAutomator** streamlines language learning by eliminating manual steps between reading, translating, and saving vocabulary. With a single hotkey, selected text is copied, translated via DeepL, and stored directly as an Anki card.
+## Requirements
 
----
+- macOS with Python 3.9 or later.
+- Anki running locally with the AnkiConnect add-on enabled.
+- A DeepL API key.
+- macOS Accessibility and Automation permissions for the terminal or Python process that runs the tool.
 
-## 📚 Table of Contents
-
-- [Features](#-features)
-- [Requirements](#-requirements)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Usage](#-usage)
-- [Project Structure](#-project-structure)
-- [Automatic Dependency Installation](#-automatic-dependency-installation)
-- [CPU Optimization](#-cpu-optimization)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Support](#-support)
-
----
-
-## 🚀 Features
-
-- 📋 Automatically copies selected text
-- 🌍 Translates text using the DeepL API
-- 🧠 Creates Anki flashcards instantly
-- ⌨️ Hotkey-triggered workflow (`Cmd + E` / `Ctrl + E`)
-- 🔔 System notifications with sound feedback
-- 🔧 Automatic dependency detection and installation
-- 🌐 Cross-platform compatibility (macOS, Windows, Linux)
-
----
-
-## 📦 Requirements
-
-Ensure the following are installed:
-
-- Python 3.9+
-- Anki (running in the background)
-- AnkiConnect plugin
-  👉 https://ankiweb.net/shared/info/2036732292
-
----
-
-## 📥 Installation
-
-### 1. Clone the Repository
+## Setup
 
 ```bash
 git clone https://github.com/fabsGitHub/AnkiClipboardDeepLAutomator.git
 cd AnkiClipboardDeepLAutomator
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+cp .env.example .env
 ```
 
-### 2. (Optional) Create a Virtual Environment
+Add your DeepL API key to .env as AUTH_KEY. The file is excluded from Git. Do not paste API keys into config.json, commit history, logs, or issue reports.
 
-```bash
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# venv\Scripts\activate   # Windows
-```
+## Configure
 
-### 3. Install Dependencies
+Edit config.json to choose the DeepL source and target languages, Anki deck and note model, character limit, and hotkey key. The default trigger is Command plus period. The Command key is currently fixed by the macOS listener.
 
-#### Automatic Installation (currently not working)
+Audio is disabled by default. To enable it, set anki.include_audio to true and choose anki.audio_lang. When enabled, Anki retrieves speech audio from Google Translate Text-to-Speech; the selected phrase is sent to that service. The query is URL-encoded, but it remains third-party data sharing.
 
-```bash
-python3 main.py
-```
+## Use
 
-#### Manual Installation
-
-```bash
-pip install requests python-dotenv deepl pynput pygame
-```
-
-#### Platform-Specific Dependencies
-
-- **macOS**
-
-  ```bash
-  pip install pyobjc
-  ```
-
-- **Windows**
-
-  ```bash
-  pip install win10toast
-  ```
-
-- **Linux (optional notifications)**
-
-  ```bash
-  pip install notify-send
-  ```
-
----
-
-## ⚙️ Configuration
-
-### 1. Create `.env` File
-
-```env
-AUTH_KEY=your_deepl_api_key_here
-```
-
-### 2. Configure `config.json`
-
-```json
-{
-  "logging": {
-    "level": "WARNING",
-    "file_level": "DEBUG",
-    "console_level": "WARNING"
-  },
-  "deepl": {
-    "auth_key_env": "AUTH_KEY",
-    "source_lang": "EN",
-    "target_lang": "DE",
-    "model_type": "prefer_quality_optimized"
-  },
-  "anki": {
-    "connect_url": "http://localhost:8765",
-    "deck_name": "english",
-    "model_name": "Basic"
-  },
-  "hotkeys": {
-    "trigger": {
-      "cmd": true,
-      "key": "e"
-    }
-  }
-}
-```
-
----
-
-## ▶️ Usage
-
-1. Launch **Anki**
-2. Ensure **AnkiConnect** is enabled
-3. Start the script:
+1. Start Anki and make sure AnkiConnect is available at http://localhost:8765.
+2. Activate the virtual environment and run:
 
 ```bash
 python3 main.py
 ```
 
-4. Select any text
-5. Press:
+3. Select a phrase in another application and press Command plus the configured trigger key.
+4. The app creates a forward and a reverse card in the configured deck.
 
-- **macOS:** `Cmd + E`
-- **Windows/Linux:** `Ctrl + E`
+## Data and privacy
 
-### ✅ Result
+- Selected text and the resulting translation are sent to DeepL and then to the local AnkiConnect instance because those transfers are required for the workflow.
+- Audio requests to Google Translate are disabled unless explicitly enabled in config.json.
+- Logs contain operational events and character counts, not selected text, translations, request bodies, or response bodies.
+- Desktop notifications may display a translation so the result is visible to the user; notification contents are not written to the application log.
+- Keep .env private and rotate a key immediately if it was ever committed or shared.
 
-The selected text will be:
+## Project structure
 
-- Copied
-- Translated via DeepL
-- Saved as a new Anki card
+- main.py handles the hotkey workflow.
+- anki_connection.py calls DeepL and AnkiConnect.
+- text_selection.py reads selected text using macOS APIs.
+- notification_handler.py displays desktop feedback.
+- config.json contains non-secret preferences.
+- applescript_utils.py escapes strings before embedding them in AppleScript.
+- requirements.txt defines Python dependencies for manual environment setup.
+- .env.example documents the required secret variable without a key value.
 
-### 🛑 Exit
+## License
 
-```bash
-Ctrl + C
-```
-
----
-
-## 📁 Project Structure
-
-```text
-.
-├── install_dependencies.py (currently not working)
-├── main.py
-├── config.json
-├── .env
-├── requirements.txt
-├── logging_setup.py
-├── notification_handler.py
-├── text_selection.py
-├── anki_connection.py
-├── anki_automator.log
-└── notification_sound.mp3
-```
-
----
-
-## 📁 Shell Script & launchd agent
-
-### Automatically Start Anki and Anki-Listener on macOS Login
-To automatically start Anki and your Anki-Listener script when you log in to your macOS user account, you can use a shell script and a launchd agent. This guide will walk you through the setup process.
-
-### Prerequisites
-
-Ensure that Anki is installed on your system.
-Ensure that your Python script (main.py) is located in your project directory.
-Make sure Python is installed and the correct version is referenced in the script.
-
-Step 1: Customize the Script
-Replace the placeholders in the script with your actual paths:
-
-`/path/to/your/AnkiClipboardDeepLAutomator/` with the path to your project directory.
-`/path/to/your/python3` with the path to your Python executable.
-
-Here is the script with placeholders:
-```bash
-#!/bin/bash
-
-# Start Anki
-open -a Anki
-
-# Wait for Anki to start
-sleep 5
-
-# Change to the project directory
-cd /path/to/your/AnkiClipboardDeepLAutomator/
-
-# Create a launchd service if it doesn't exist
-PLIST_FILE=~/Library/LaunchAgents/com.user.ankilistener.plist
-
-if [ ! -f "$PLIST_FILE" ]; then
-    cat > "$PLIST_FILE" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.user.ankilistener</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/bin/zsh</string>
-        <string>-c</string>
-        <string>cd /path/to/your/AnkiClipboardDeepLAutomator/ && /path/to/your/python3 main.py</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <dict>
-        <key>SuccessfulExit</key>
-        <false/>
-    </dict>
-    <key>StandardOutPath</key>
-    <string>/path/to/your/AnkiClipboardDeepLAutomator/output.log</string>
-    <key>StandardErrorPath</key>
-    <string>/path/to/your/AnkiClipboardDeepLAutomator/error.log</string>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:\$PATH</string>
-    </dict>
-    <key>ProcessType</key>
-    <string>Interactive</string>
-</dict>
-</plist>
-EOF
-    echo "Creating launchd service..."
-else
-    echo "launchd service already exists."
-fi
-
-# Load the launchd service
-if ! launchctl list | grep -q com.user.ankilistener; then
-    launchctl unload "$PLIST_FILE" 2>/dev/null
-    launchctl load "$PLIST_FILE"
-    echo "Loading launchd service..."
-else
-    echo "launchd service is already running."
-fi
-```
-
-Step 2: Save the Script
-Save the script to a file, for example, *start_anki_listener.sh*, in your project directory.
-
-Step 3: Make the Script Executable
-Open Terminal and navigate to your project directory. Make the script executable:
-
-```bash
-chmod +x /path/to/your/start_anki_listener.sh
-```
-
-Step 4: Add the Script as a Login Item
-
-Open *System Preferences > Users & Groups > Login Items*.
-Click the *+ button*.
-Navigate to the location where you saved *start_anki_listener.sh* and select it.
-Ensure the checkbox next to the script is checked to allow it to run at login.
-
-### Troubleshooting
-
-Permissions: Ensure that the script and the Python script are executable.
-Paths: Double-check that all paths in the script are correct.
-Logs: Check the log files for any error messages.
-
-### Important Notes
-
-Replace Paths: Make sure to replace all placeholders (`/path/to/your/...`) with the actual paths to your project directory and Python executable.
-Python Version: Ensure that the path to the Python version is correct.
-Permissions: Ensure that script files are executable (`chmod +x /path/to/your/start_anki_listener.sh`).
-
----
-
-## ⚠️ Troubleshooting
-
-### ❌ Cannot Connect to Anki
-
-- Ensure Anki is running
-- Verify AnkiConnect is installed and enabled
-- Check `connect_url` in `config.json`
-
-### ❌ DeepL Errors
-
-- Confirm API key in `.env`
-- Verify DeepL account status
-- Check internet connection
-
-### ❌ Missing Dependencies
-
-- Run:
-
-  ```bash
-  python3 -m pip install xyz
-  ```
-
-### ❌ Hotkey Not Working
-
-- Grant accessibility permissions to your terminal/app
-- Verify hotkey configuration in `config.json`
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
-- Open an issue for discussion before major changes
-- Submit pull requests with clear descriptions
-
----
-
-## 📜 License
-
-This project is licensed under the **MIT License**.
-
----
-
-## 📧 Support
-
-For help or questions:
-
-- Check GitHub Issues
-
----
+This project is distributed under the MIT License; see LICENSE.

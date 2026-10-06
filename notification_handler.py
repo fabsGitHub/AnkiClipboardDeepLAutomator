@@ -4,15 +4,18 @@ import os  # Wichtig: os-Modul importieren
 import logging
 from typing import Optional
 from logging_setup import log_debug, log_info, log_error
+from applescript_utils import escape_applescript_string
 
 
 def show_notification(logger, message: str, title: str = "Anki Translator"):
     """Show a notification using the appropriate method for the current OS."""
-    log_info(logger, f"Showing notification: {title} - {message}")
+    log_info(logger, f"Showing notification: {title}")
     try:
         if platform.system() == "Darwin":
             log_debug(logger, "Using macOS notification system")
-            script = f'display notification "{message}" with title "{title}"'
+            safe_message = escape_applescript_string(message)
+            safe_title = escape_applescript_string(title)
+            script = f'display notification "{safe_message}" with title "{safe_title}"'
             subprocess.run(["osascript", "-e", script])
         elif platform.system() == "Windows":
             log_debug(logger, "Using Windows notification system")
@@ -24,7 +27,7 @@ def show_notification(logger, message: str, title: str = "Anki Translator"):
             log_debug(logger, "Using Linux notification system")
             subprocess.run(["notify-send", title, message])
     except Exception as e:
-        log_error(logger, f"Failed to show notification: {e}", e)
+        log_error(logger, "Failed to show desktop notification.")
 
 
 def play_sound(logger):

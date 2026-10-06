@@ -19,7 +19,7 @@ class Connection:
 
     def _translate(self, text: str, language: str) -> Optional[str]:
         """Translate the text using the DeepL API."""
-        log_info(self.logger, f"Translating text: {text}")
+        log_info(self.logger, f"Sending {len(text)} characters to DeepL.")
         try:
             deepl_client = deepl.DeepLClient(
                 os.environ[self.deepl_config["auth_key_env"]]
@@ -30,11 +30,11 @@ class Connection:
                 target_lang=language,
                 model_type=self.deepl_config["model_type"],
             )
-            log_debug(self.logger, f"Translation result: {result.text}")
+            log_debug(self.logger, f"DeepL returned {len(result.text)} characters.")
             return result.text
         except Exception as e:
-            error_msg = f"DeepL Translation Error: {str(e)}"
-            log_error(self.logger, error_msg, e)
+            error_msg = "DeepL translation failed; response details were omitted to protect selected text."
+            log_error(self.logger, error_msg)
             show_notification(self.logger, error_msg, "❌ DeepL Error")
             return None
 
@@ -46,14 +46,13 @@ class Connection:
         """Send a request to AnkiConnect."""
         log_info(self.logger, f"Invoking AnkiConnect action: {action}")
         request_json = json.dumps(self._request(action, **params)).encode("utf-8")
-        log_debug(self.logger, f"Request JSON: {request_json}")
+        log_debug(self.logger, f"AnkiConnect request prepared for action: {action}")
 
         try:
             response = self.session.post(
                 self.anki_config["connect_url"], request_json, timeout=5
             )
             json_response = response.json()
-            log_debug(self.logger, f"AnkiConnect response: {json_response}")
 
             if len(json_response) != 2:
                 error_msg = "Response has an unexpected number of fields"
@@ -86,8 +85,8 @@ class Connection:
                     )
                     return None
                 else:
-                    error_msg = json_response["error"]
-                    log_error(self.logger, f"AnkiConnect Error: {error_msg}")
+                    error_msg = "AnkiConnect rejected the note request."
+                    log_error(self.logger, error_msg)
                     show_notification(self.logger, error_msg, "❌ AnkiConnect Error")
                     raise Exception(error_msg)
             else:
@@ -100,22 +99,22 @@ class Connection:
                 )
                 return json_response["result"]
 
-        except requests.exceptions.ConnectionError as e:
-            error_msg = "Could not connect to AnkiConnect"
-            log_error(self.logger, error_msg, e)
+        except requests.exceptions.ConnectionError:
+            error_msg = "Could not connect to AnkiConnect." 
+            log_error(self.logger, error_msg)
             show_notification(
                 self.logger,
                 "Could not connect to AnkiConnect. Check if Anki is running and AnkiConnect is enabled.",
                 "❌ AnkiConnect Error",
             )
             return None
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Error making request to AnkiConnect: {e}"
-            log_error(self.logger, error_msg, e)
+        except requests.exceptions.RequestException:
+            error_msg = "AnkiConnect request failed; response details were omitted."
+            log_error(self.logger, error_msg)
             show_notification(self.logger, error_msg, "❌ AnkiConnect Error")
             return None
-        except Exception as e:
-            error_msg = f"Unexpected error in _invoke: {str(e)}"
-            log_error(self.logger, error_msg, e)
+        except Exception:
+            error_msg = "AnkiConnect action failed; payload and exception details were omitted."
+            log_error(self.logger, error_msg)
             show_notification(self.logger, error_msg, "❌ AnkiConnect Error")
             return None

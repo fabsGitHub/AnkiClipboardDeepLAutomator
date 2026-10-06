@@ -2,6 +2,7 @@ import subprocess
 from AppKit import NSPasteboard, NSWorkspace
 from typing import Optional
 from logging_setup import log_debug, log_info, log_warning, log_error
+from applescript_utils import escape_applescript_string
 
 
 def get_selected_text(logger) -> Optional[str]:
@@ -10,10 +11,11 @@ def get_selected_text(logger) -> Optional[str]:
     try:
         active_app = NSWorkspace.sharedWorkspace().frontmostApplication()
         app_name = active_app.localizedName()
-        log_debug(logger, f"Active application: {app_name}")
+        log_debug(logger, "Using the foreground application for text selection")
 
+        safe_app_name = escape_applescript_string(app_name)
         script = f"""
-        tell application "{app_name}"
+        tell application "{safe_app_name}"
             try
                 set theSelection to (get selection)
                 if theSelection is not "" then
@@ -35,17 +37,17 @@ def get_selected_text(logger) -> Optional[str]:
         selected_text = process.stdout.strip()
 
         if selected_text:
-            log_debug(logger, f"Successfully got selected text: {repr(selected_text)}")
+            log_debug(logger, f"Selected text captured ({len(selected_text)} characters)")
             return selected_text
 
         pasteboard = NSPasteboard.generalPasteboard()
         clipboard_text = pasteboard.stringForType_("public.utf8-plain-text")
         if clipboard_text:
-            log_debug(logger, f"Fallback to clipboard text: {repr(clipboard_text)}")
+            log_debug(logger, f"Clipboard fallback captured {len(clipboard_text)} characters")
             return clipboard_text
 
         log_warning(logger, "No text could be retrieved")
         return None
     except Exception as e:
-        log_error(logger, f"Error getting selected text: {e}", e)
+        log_error(logger, "Could not read selected text; exception details were omitted.")
         return None
