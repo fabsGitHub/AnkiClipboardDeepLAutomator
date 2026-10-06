@@ -6,13 +6,24 @@ from typing import Optional
 from logging_setup import log_debug, log_info, log_error
 
 
+def _escape_applescript_string(value: str) -> str:
+    return (
+        value.replace("\\\\", "\\\\\\\\")
+        .replace('"', '\\\\"')
+        .replace("\\r", "\\\\r")
+        .replace("\\n", "\\\\n")
+    )
+
+
 def show_notification(logger, message: str, title: str = "Anki Translator"):
     """Show a notification using the appropriate method for the current OS."""
-    log_info(logger, f"Showing notification: {title} - {message}")
+    log_info(logger, f"Showing notification: {title}")
     try:
         if platform.system() == "Darwin":
             log_debug(logger, "Using macOS notification system")
-            script = f'display notification "{message}" with title "{title}"'
+            safe_message = _escape_applescript_string(message)
+            safe_title = _escape_applescript_string(title)
+            script = f'display notification "{safe_message}" with title "{safe_title}"'
             subprocess.run(["osascript", "-e", script])
         elif platform.system() == "Windows":
             log_debug(logger, "Using Windows notification system")
