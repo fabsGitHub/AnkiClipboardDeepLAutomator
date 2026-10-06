@@ -64,6 +64,8 @@ python3 main.py
 - text_selection.py reads selected text using macOS APIs.
 - notification_handler.py displays desktop feedback.
 - config.json contains non-secret preferences.
+- applescript_utils.py escapes strings before embedding them in AppleScript.
+- requirements.txt defines Python dependencies for manual environment setup.
 - .env.example documents the required secret variable without a key value.
 
 ## License
